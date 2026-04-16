@@ -1,0 +1,167 @@
+[build-system]
+requires = ["pdm-backend>=2.4.0"]
+build-backend = "pdm.backend"
+
+[project]
+name = "ooai-llm"
+version = "0.3.0"
+description = "Typed LLM settings, LangChain-first factories, LiteLLM metadata enrichment, and callback helpers."
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [{name = "OpenAI"}]
+license = {text = "MIT"}
+keywords = ["llm", "langchain", "pydantic", "settings", "ai"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+dependencies = [
+  "pydantic>=2.12.0",
+  "pydantic-settings>=2.12.0",
+  "langchain>=1.2.0",
+  "langchain-community>=0.4.0",
+  "sqlalchemy>=2.0.0",
+]
+
+[project.optional-dependencies]
+openai = [
+  "langchain-openai>=0.3.0",
+  "openai>=1.0.0",
+]
+anthropic = [
+  "langchain-anthropic>=0.3.0",
+  "anthropic>=0.39.0",
+]
+google = [
+  "langchain-google-genai>=2.1.0",
+  "google-genai>=1.30.0",
+]
+xai = [
+  "langchain-xai>=0.2.0",
+  "xai-sdk>=0.3.0",
+]
+deepseek = [
+  "langchain-deepseek>=0.1.0",
+  "openai>=1.0.0",
+]
+mistral = [
+  "langchain-mistralai>=0.2.0",
+  "mistralai>=1.0.0",
+]
+litellm = [
+  "litellm>=1.74.0",
+]
+providers = [
+  "langchain-openai>=0.3.0",
+  "openai>=1.0.0",
+  "langchain-anthropic>=0.3.0",
+  "anthropic>=0.39.0",
+  "langchain-google-genai>=2.1.0",
+  "google-genai>=1.30.0",
+  "langchain-xai>=0.2.0",
+  "xai-sdk>=0.3.0",
+  "langchain-deepseek>=0.1.0",
+  "langchain-mistralai>=0.2.0",
+  "mistralai>=1.0.0",
+]
+all = [
+  "langchain-openai>=0.3.0",
+  "openai>=1.0.0",
+  "langchain-anthropic>=0.3.0",
+  "anthropic>=0.39.0",
+  "langchain-google-genai>=2.1.0",
+  "google-genai>=1.30.0",
+  "langchain-xai>=0.2.0",
+  "xai-sdk>=0.3.0",
+  "langchain-deepseek>=0.1.0",
+  "langchain-mistralai>=0.2.0",
+  "mistralai>=1.0.0",
+  "litellm>=1.74.0",
+]
+docs = [
+  "sphinx>=9.1.0",
+  "furo>=2025.12.19",
+  "sphinx-autobuild>=2025.8.25",
+  "myst-parser>=5.0.0",
+  "myst-nb>=1.4.0",
+  "sphinx-copybutton>=0.5.2",
+  "sphinx-design>=0.7.0",
+  "sphinx-togglebutton>=0.4.5",
+  "sphinx-inline-tabs>=2025.12.21.14",
+  "sphinxcontrib-mermaid>=2.0.1",
+  "sphinx-autodoc-typehints>=3.10.2",
+  "autodoc-pydantic>=2.2.0",
+  "sphinx-autoapi>=3.8.0",
+  "sphinxext-opengraph>=0.13.0",
+  "sphinx-sitemap>=2.9.0",
+  "sphinx-notfound-page>=1.1.0",
+  "sphinx-last-updated-by-git>=0.3.8",
+  "sphinx-reredirects>=1.1.0",
+  "sphinxcontrib-spelling>=8.0.2",
+  "doc8>=2.0.0",
+]
+test = [
+  "pytest>=9.0.0",
+  "pytest-cov>=7.0.0",
+  "coverage[toml]>=7.10.0",
+]
+dev = [
+  "pytest>=9.0.0",
+  "pytest-cov>=7.0.0",
+  "coverage[toml]>=7.10.0",
+  "build>=1.3.0",
+  "twine>=6.2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/OWNER/ooai-llm"
+Documentation = "https://ooai-llm.readthedocs.io/"
+Repository = "https://github.com/OWNER/ooai-llm"
+Issues = "https://github.com/OWNER/ooai-llm/issues"
+Changelog = "https://github.com/OWNER/ooai-llm/releases"
+
+[tool.pdm]
+distribution = true
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers --strict-config --cov=ooai_llm --cov-report=term-missing --cov-report=xml --cov-report=html"
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = [
+  "unit: fast unit tests",
+  "integration: integration tests with multiple package components",
+  "e2e: end-to-end tests of public flows",
+  "live: live tests that require real provider credentials and optional SDKs",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/ooai_llm"]
+parallel = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 80
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+]
+
+[tool.coverage.html]
+directory = "build/reports/coverage/html"
+
+[tool.coverage.xml]
+output = "build/reports/coverage/coverage.xml"
+
+[tool.doc8]
+max-line-length = 100
+paths = ["docs"]
+extensions = [".rst", ".md"]
