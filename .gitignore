@@ -4,6 +4,8 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.pdm-python
+.pdm-build/
 .coverage
 .coverage.*
 htmlcov/
@@ -12,6 +14,7 @@ build/
 dist/
 *.egg-info/
 docs/_build/
+docs/autoapi/
 .env
 .venv/
 .vscode/

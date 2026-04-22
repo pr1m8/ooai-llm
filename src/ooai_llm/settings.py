@@ -12,7 +12,7 @@ Design:
       values derived from the working directory.
     - Make model-string defaults reusable through a typed ``ModelString``.
 
-Attributes:
+Type aliases:
     ModelPresetName: Semantic preset names available per provider.
     ModelAliasName: Global semantic aliases.
 
@@ -46,6 +46,17 @@ ModelPresetName = Literal[
 ]
 
 ModelAliasName = ModelPresetName
+
+
+def _load_dotenv_values() -> dict[str, str]:
+    """Load non-empty values from a local ``.env`` file when available."""
+    try:
+        from dotenv import dotenv_values
+    except ImportError:
+        return {}
+
+    values = dotenv_values(".env")
+    return {key: str(value) for key, value in values.items() if key and value}
 
 
 class ProviderCredentials(BaseModel):
@@ -114,12 +125,16 @@ class ProviderCredentials(BaseModel):
         Returns:
             Credentials populated from environment variables.
         """
+        dotenv_values = _load_dotenv_values()
+
         def first(*names: str) -> str | None:
             for name in names:
-                value = os.environ.get(name)
+                value = os.environ.get(name) or dotenv_values.get(name)
                 if value:
                     return value
             return None
+
+        google_vertexai = first("OOAI_GOOGLE_USE_VERTEXAI", "GOOGLE_GENAI_USE_VERTEXAI")
 
         return cls(
             openai_api_key=first("OOAI_OPENAI_API_KEY", "OPENAI_API_KEY"),
@@ -128,7 +143,9 @@ class ProviderCredentials(BaseModel):
             xai_api_key=first("OOAI_XAI_API_KEY", "XAI_API_KEY"),
             deepseek_api_key=first("OOAI_DEEPSEEK_API_KEY", "DEEPSEEK_API_KEY"),
             mistral_api_key=first("OOAI_MISTRAL_API_KEY", "MISTRAL_API_KEY"),
-            google_use_vertexai=(first("OOAI_GOOGLE_USE_VERTEXAI", "GOOGLE_GENAI_USE_VERTEXAI") or "").lower() in {"1", "true", "yes", "on"} if first("OOAI_GOOGLE_USE_VERTEXAI", "GOOGLE_GENAI_USE_VERTEXAI") is not None else None,
+            google_use_vertexai=google_vertexai.lower() in {"1", "true", "yes", "on"}
+            if google_vertexai is not None
+            else None,
             google_cloud_project=first("OOAI_GOOGLE_CLOUD_PROJECT", "GOOGLE_CLOUD_PROJECT"),
             google_cloud_location=first("OOAI_GOOGLE_CLOUD_LOCATION", "GOOGLE_CLOUD_LOCATION"),
         )
@@ -637,6 +654,9 @@ class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="OOAI_",
         env_nested_delimiter="__",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_ignore_empty=True,
         extra="ignore",
     )
 

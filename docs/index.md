@@ -1,13 +1,19 @@
 # ooai-llm
 
-Typed settings, provider-aware model parsing, cache bootstrap, and ergonomic LangChain model creation.
+Typed LLM settings, provider-aware model parsing, LangChain-first chat-model
+creation, live model discovery, LiteLLM metadata enrichment, and usage/cost
+callback helpers.
 
 ```{toctree}
 :maxdepth: 2
 :caption: Guide
 
 getting-started
+factory
 usage
+examples
+testing
+publishing
 api/index
 changelog
 ```
@@ -22,6 +28,9 @@ changelog
 - loading credentials from both app-prefixed and native provider env vars
 - configuring a global SQLite-backed LangChain cache
 - creating chat models through a thin wrapper over LangChain's unified initializer
+- listing available models from provider SDKs and REST APIs
+- joining LangChain capability profiles with LiteLLM pricing metadata
+- recording usage and cost events from LangChain or LiteLLM callbacks
 
 ```{admonition} Scope
 :class: tip
@@ -39,4 +48,6 @@ flowchart LR
     C --> E[create_llm]
     D --> E[create_llm]
     A --> F[configure_global_llm_cache]
+    D --> G[list_available_models]
+    E --> H[get_model_info]
 ```

@@ -14,7 +14,7 @@ Design:
     - Focus on read-only discovery so the module stays useful even before more
       advanced routing, pricing, or profile-merging features are added.
 
-Attributes:
+Important constants:
     DEFAULT_DEEPSEEK_BASE_URL: OpenAI-compatible DeepSeek base URL.
     DEFAULT_XAI_BASE_URL: xAI REST API base URL.
 
@@ -41,6 +41,7 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from .providers import (
     PROVIDER_EXTRAS,
+    PROVIDER_LANGCHAIN_PACKAGES,
     PROVIDER_NATIVE_SDK_PACKAGES,
     Provider,
     normalize_provider_name,
@@ -173,7 +174,7 @@ def get_provider_client_info(provider: Provider | str) -> ProviderClientInfo:
         provider=resolved,
         extra_name=PROVIDER_EXTRAS.get(resolved),
         native_sdk_package=PROVIDER_NATIVE_SDK_PACKAGES.get(resolved),
-        langchain_package=None,
+        langchain_package=PROVIDER_LANGCHAIN_PACKAGES.get(resolved),
     )
 
 
@@ -530,10 +531,12 @@ def _list_xai(*, api_key: str, config: ListModelsConfig, **kwargs: Any) -> Model
 
 def _list_xai_models(*, api_key: str, config: ListModelsConfig, **kwargs: Any) -> ModelListResult:
     if config.prefer_sdk:
+        sdk_kwargs = dict(kwargs)
+        sdk_kwargs.pop("base_url", None)
         try:
             import xai_sdk
 
-            client = xai_sdk.Client(api_key=api_key, **kwargs)
+            client = xai_sdk.Client(api_key=api_key, **sdk_kwargs)
             data = client.models.list_language_models()
             models = [
                 _normalize_model_info(Provider.XAI, item)
@@ -547,15 +550,19 @@ def _list_xai_models(*, api_key: str, config: ListModelsConfig, **kwargs: Any) -
             )
         except ImportError:
             pass
+        except (AttributeError, TypeError):
+            pass
     return _list_xai(api_key=api_key, config=config, **kwargs)
 
 
 def _list_anthropic_models(*, api_key: str, config: ListModelsConfig, **kwargs: Any) -> ModelListResult:
     if config.prefer_sdk:
+        sdk_kwargs = dict(kwargs)
+        sdk_kwargs.pop("anthropic_version", None)
         try:
             import anthropic
 
-            client = anthropic.Anthropic(api_key=api_key, **kwargs)
+            client = anthropic.Anthropic(api_key=api_key, **sdk_kwargs)
             try:
                 response = client.models.list(limit=config.page_size) if config.page_size is not None else client.models.list()
             except TypeError:
@@ -575,5 +582,7 @@ def _list_anthropic_models(*, api_key: str, config: ListModelsConfig, **kwargs: 
         except ImportError:
             pass
         except AttributeError:
+            pass
+        except TypeError:
             pass
     return _list_anthropic(api_key=api_key, config=config, **kwargs)

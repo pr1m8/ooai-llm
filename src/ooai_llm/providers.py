@@ -12,7 +12,7 @@ Design:
     - Expose native environment-variable names, LiteLLM provider prefixes,
       native SDK package names, and extra names for installation guidance.
 
-Attributes:
+Important mappings:
     PROVIDER_ALIASES: Mapping from common aliases to canonical providers.
     PROVIDER_API_KEY_ENV_VARS: Native environment-variable names by provider.
     PROVIDER_LITELLM_PREFIXES: Native LiteLLM provider prefixes.

@@ -12,7 +12,18 @@ from ooai_llm import ModelString
 def test_public_api_is_curated() -> None:
     """The top-level package should expose the curated public API in ``__all__``."""
     exported = set(ooai_llm.__all__)
-    assert {"create_llm", "get_model_info", "list_models", "ModelInfo"}.issubset(exported)
+    assert {
+        "ListModelsConfig",
+        "Provider",
+        "build_reasoning_resolution",
+        "configure_global_llm_cache",
+        "create_llm",
+        "get_model_info",
+        "list_model_ids",
+        "list_models",
+        "make_litellm_cost_callback",
+        "ModelInfo",
+    }.issubset(exported)
     assert "resolve_model_meta" not in exported
 
 

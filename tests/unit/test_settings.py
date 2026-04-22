@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from ooai_llm.providers import PROVIDER_API_KEY_ENV_VARS
 from ooai_llm import AppSettings, ModelString
 
 
@@ -56,3 +57,19 @@ def test_catalog_settings_expose_provider_defaults() -> None:
     settings = AppSettings()
     assert settings.catalog.xai.base_url == "https://api.x.ai"
     assert settings.catalog.build_list_models_options("openai")["prefer_sdk"] is True
+
+
+@pytest.mark.unit
+def test_app_settings_loads_dotenv_file(tmp_path: Path, monkeypatch) -> None:
+    """It should load local .env files for developer and live-test workflows."""
+    for env_var in PROVIDER_API_KEY_ENV_VARS.values():
+        monkeypatch.delenv(env_var, raising=False)
+    monkeypatch.delenv("OOAI_OPENAI_API_KEY", raising=False)
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text("OPENAI_API_KEY=sk-dotenv\n", encoding="utf-8")
+
+    settings = AppSettings()
+
+    if settings.credentials.get_api_key("openai") != "sk-dotenv":
+        pytest.fail("Expected OPENAI_API_KEY to be loaded from the local .env file.")

@@ -63,13 +63,19 @@ def test_list_available_models_google_uses_native_sdk(monkeypatch) -> None:
     class FakeClient:
         def __init__(self, *, api_key: str, **kwargs: object) -> None:
             assert api_key == "sk-google"
-            self.kwargs = kwargs
+            assert kwargs["vertexai"] is True
+            assert kwargs["project"] == "demo-project"
+            assert kwargs["location"] == "us-central1"
             self.models = types.SimpleNamespace(
-                list=lambda config=None: [
-                    FakeGoogleModel("models/gemini-2.5-flash"),
-                    FakeGoogleModel("models/gemini-2.5-pro"),
-                ]
+                list=self.list
             )
+
+        def list(self, config=None):
+            assert config == {"page_size": 20, "query_base": True}
+            return [
+                FakeGoogleModel("models/gemini-2.5-flash"),
+                FakeGoogleModel("models/gemini-2.5-pro"),
+            ]
 
     fake_google = types.ModuleType("google")
     fake_google.genai = types.SimpleNamespace(Client=FakeClient)
@@ -77,14 +83,110 @@ def test_list_available_models_google_uses_native_sdk(monkeypatch) -> None:
 
     result = list_available_models(
         "google",
-        settings=AppSettings(credentials={"google_api_key": "sk-google"}),
-        config=ListModelsConfig(limit=1),
+        settings=AppSettings(
+            credentials={
+                "google_api_key": "sk-google",
+                "google_use_vertexai": True,
+                "google_cloud_project": "demo-project",
+                "google_cloud_location": "us-central1",
+            }
+        ),
+        config=ListModelsConfig(limit=1, page_size=20, query_base=True),
     )
 
     assert result.provider == Provider.GOOGLE_GENAI
     assert result.used_sdk is True
     assert [item.model_id for item in result.models] == ["models/gemini-2.5-flash"]
     assert result.models[0].supported_actions == ["generateContent"]
+
+
+@pytest.mark.unit
+def test_list_available_models_anthropic_uses_sdk(monkeypatch) -> None:
+    """It should list Anthropic models through the SDK when available."""
+
+    class FakeClient:
+        def __init__(self, *, api_key: str, **kwargs: object) -> None:
+            assert api_key == "sk-anthropic"
+            assert "anthropic_version" not in kwargs
+            self.models = types.SimpleNamespace(list=self.list)
+
+        def list(self, *, limit: int | None = None):
+            assert limit == 1
+            return types.SimpleNamespace(
+                data=[{"id": "claude-sonnet-4-20250514", "type": "model"}],
+                has_more=True,
+                last_id="next-page",
+            )
+
+    fake_anthropic = types.ModuleType("anthropic")
+    fake_anthropic.Anthropic = FakeClient
+    monkeypatch.setitem(sys.modules, "anthropic", fake_anthropic)
+
+    result = list_available_models(
+        "anthropic",
+        settings=AppSettings(credentials={"anthropic_api_key": "sk-anthropic"}),
+        config=ListModelsConfig(page_size=1),
+    )
+
+    assert result.used_sdk is True
+    assert result.next_page_token == "next-page"
+    assert result.models[0].model_id == "claude-sonnet-4-20250514"
+
+
+@pytest.mark.unit
+def test_list_available_models_xai_uses_sdk_without_rest_base_url(monkeypatch) -> None:
+    """It should avoid passing REST-only kwargs into the xAI SDK."""
+
+    class FakeClient:
+        def __init__(self, *, api_key: str, **kwargs: object) -> None:
+            assert api_key == "sk-xai"
+            assert "base_url" not in kwargs
+            self.models = types.SimpleNamespace(
+                list_language_models=lambda: [
+                    {"id": "grok-4.20-reasoning", "object": "model", "aliases": ("grok",)}
+                ]
+            )
+
+    fake_xai = types.ModuleType("xai_sdk")
+    fake_xai.Client = FakeClient
+    monkeypatch.setitem(sys.modules, "xai_sdk", fake_xai)
+
+    result = list_available_models(
+        "xai",
+        settings=AppSettings(credentials={"xai_api_key": "sk-xai"}),
+        base_url="https://custom.xai.example",
+    )
+
+    assert result.used_sdk is True
+    assert result.models[0].aliases == ["grok"]
+    assert result.notes == ["Used xAI SDK language-model listing."]
+
+
+@pytest.mark.unit
+def test_list_available_models_mistral_uses_sdk(monkeypatch) -> None:
+    """It should list Mistral models through the native SDK."""
+
+    class FakeClient:
+        def __init__(self, *, api_key: str, **_: object) -> None:
+            assert api_key == "sk-mistral"
+            self.models = types.SimpleNamespace(
+                list=lambda: types.SimpleNamespace(
+                    data=[{"id": "mistral-small-2603", "created_at": "2026-01-01T00:00:00Z"}]
+                )
+            )
+
+    fake_mistral = types.ModuleType("mistralai")
+    fake_mistral.Mistral = FakeClient
+    monkeypatch.setitem(sys.modules, "mistralai", fake_mistral)
+
+    result = list_available_models(
+        "mistral",
+        settings=AppSettings(credentials={"mistral_api_key": "sk-mistral"}),
+    )
+
+    assert result.provider == Provider.MISTRAL
+    assert result.used_sdk is True
+    assert result.models[0].model_id == "mistral-small-2603"
 
 
 @pytest.mark.unit
@@ -109,6 +211,7 @@ def test_list_available_models_xai_falls_back_to_rest(monkeypatch) -> None:
     result = list_available_models(
         "xai",
         settings=AppSettings(credentials={"xai_api_key": "sk-xai"}),
+        config=ListModelsConfig(prefer_sdk=False),
     )
 
     assert result.provider == Provider.XAI
@@ -146,6 +249,7 @@ def test_list_available_models_anthropic_rest_fallback(monkeypatch) -> None:
     result = list_available_models(
         "anthropic",
         settings=AppSettings(credentials={"anthropic_api_key": "sk-anthropic"}),
+        config=ListModelsConfig(prefer_sdk=False),
     )
 
     assert result.provider == Provider.ANTHROPIC
@@ -186,6 +290,7 @@ def test_get_provider_client_info_exposes_install_metadata() -> None:
     assert info.provider == Provider.GOOGLE_GENAI
     assert info.extra_name == "google"
     assert info.native_sdk_package == "google-genai"
+    assert info.langchain_package == "langchain-google-genai"
 
 
 

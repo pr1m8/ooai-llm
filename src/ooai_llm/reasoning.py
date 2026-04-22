@@ -11,7 +11,7 @@ Design:
     - Focus on constructor kwargs consumed by ``create_llm(...)`` while leaving
       room for future invoke-time configuration.
 
-Attributes:
+Type aliases:
     ReasoningPresetName: Semantic presets for common reasoning modes.
     ReasoningEffortName: Provider-agnostic effort scale.
     ReasoningSummaryName: Cross-provider summary visibility preference.

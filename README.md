@@ -1,77 +1,67 @@
 # ooai-llm
 
-[![CI](https://github.com/OWNER/ooai-llm/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/ooai-llm/actions/workflows/ci.yml)
+[![CI](https://github.com/pr1m8/ooai-llm/actions/workflows/ci.yml/badge.svg)](https://github.com/pr1m8/ooai-llm/actions/workflows/ci.yml)
 [![Docs](https://readthedocs.org/projects/ooai-llm/badge/?version=latest)](https://ooai-llm.readthedocs.io/en/latest/)
 [![PyPI](https://img.shields.io/pypi/v/ooai-llm.svg)](https://pypi.org/project/ooai-llm/)
 [![Python](https://img.shields.io/pypi/pyversions/ooai-llm.svg)](https://pypi.org/project/ooai-llm/)
-[![Coverage](https://img.shields.io/codecov/c/github/OWNER/ooai-llm.svg)](https://codecov.io/gh/OWNER/ooai-llm)
+[![Coverage](https://img.shields.io/codecov/c/github/pr1m8/ooai-llm.svg)](https://codecov.io/gh/pr1m8/ooai-llm)
 
-Typed LLM settings, provider-aware model-string parsing, LangChain-first model creation, LiteLLM pricing enrichment, and ergonomic callback helpers for Python applications.
+Typed LLM settings, provider-aware model-string parsing, LangChain-first chat
+model creation, live provider model discovery, LiteLLM pricing enrichment, and
+usage/cost callback helpers for Python applications.
 
-> Update `OWNER` and the Read the Docs project slug in the badge links after creating your repository.
+## What This Is
 
-## Why this package exists
+`ooai-llm` is a small integration layer for application code that already wants
+to use LangChain model classes directly, but does not want to repeat the same
+provider configuration, model defaults, env-var handling, cache setup, metadata
+lookup, and usage accounting in every project.
 
-`ooai-llm` gives you one small, typed layer for the parts of LLM applications that tend to repeat across projects:
-
-- parsing and normalizing model strings like `openai:gpt-5.4-mini`
-- inferring providers from bare model names such as `gpt-5.4-nano`
-- resolving provider defaults like `cheap`, `testing`, `reasoning`, or `vision`
-- loading API keys from both app-prefixed and native provider env vars
-- wiring a global SQLite-backed LangChain cache with sensible local paths
-- creating LangChain chat models with a thin wrapper around `init_chat_model(...)`
-- listing available models from native provider APIs and SDKs with one typed return shape
-
-The package is intentionally focused. It does not try to be a router, proxy, or model catalog service.
+It is not a router, proxy, agent framework, or hosted model catalog.
 
 ## Features
 
-- Fully typed `ModelString` root model that is reusable for chat, embeddings, rerankers, and other model families.
-- Canonical provider normalization and inference helpers.
-- `AppSettings` with nested `LLMSettings`, `ProviderCredentials`, and `LLMCacheSettings`.
-- Default models by provider and by semantic alias.
-- Optional global LangChain cache bootstrap using SQLite.
-- Thin `create_llm(...)` wrapper for LangChain chat models.
-- `create_llm_bundle(...)` helper that resolves LangChain profiles together with native LiteLLM pricing metadata.
-- LiteLLM-style model-string conversion for pricing, callbacks, and future routing.
-- `list_models(...)` and `list_model_ids(...)` for live provider model discovery.
-- `get_model_info(...)` for LangChain-profile capabilities plus LiteLLM pricing enrichment.
-- `normalize_messages(...)` for ergonomic string / dict / LangChain-message handling.
-- Provider-aware reasoning adapters for OpenAI, Anthropic, Gemini, xAI, DeepSeek, and Mistral.
-- Unit, integration, and end-to-end tests with coverage reporting.
-- Sphinx + AutoAPI docs scaffolding with Read the Docs configuration.
+- Typed `ModelString` parsing for bare, LangChain-style, and LiteLLM-style model names.
+- Provider inference for OpenAI, Anthropic, Google GenAI, xAI, DeepSeek, and Mistral.
+- `AppSettings` with provider credentials, default aliases, provider presets, cache settings, catalog settings, and LiteLLM settings.
+- Native and app-prefixed credential env vars, such as `OPENAI_API_KEY` and `OOAI_OPENAI_API_KEY`.
+- SQLite-backed LangChain global cache bootstrap.
+- `create_llm(...)`, a thin wrapper around LangChain `init_chat_model(...)`.
+- `create_llm_bundle(...)`, which returns the model, resolved metadata, and reasoning resolution together.
+- Live model listing through provider SDKs or REST fallbacks.
+- LangChain profile + LiteLLM pricing metadata in one `ModelInfo` object.
+- Provider-aware reasoning kwargs for OpenAI, Anthropic, Gemini, xAI, DeepSeek, and Mistral.
+- Usage and cost helpers for LangChain metadata and LiteLLM callbacks.
+- Unit, integration, e2e, live-provider tests, coverage reports, docs builds, package builds, and PyPI release workflow.
 
 ## Installation
 
-### Base package
+Base package:
+
+```bash
+pip install ooai-llm
+```
+
+With PDM:
 
 ```bash
 pdm add ooai-llm
 ```
 
-### Provider integrations
-
-Install the providers you actually use.
+Install only the provider extras you use:
 
 ```bash
 pdm add ooai-llm[openai]
 pdm add ooai-llm[anthropic]
-pdm add ooai-llm[google]
-pdm add ooai-llm[xai]
 pdm add ooai-llm[deepseek]
 pdm add ooai-llm[mistral]
 pdm add ooai-llm[litellm]
-pdm add ooai-llm[providers]
-pdm add ooai-llm[all]
 ```
 
-### Developer setup
+Gemini and xAI are available as `ooai-llm[google]` and `ooai-llm[xai]`, but you
+can skip those extras entirely if you do not have those keys.
 
-```bash
-pdm install -G test -G docs -G dev
-```
-
-## Quick start
+## Factory Quick Start
 
 ```python
 from ooai_llm import AppSettings, configure_global_llm_cache, create_llm
@@ -89,7 +79,60 @@ llm = create_llm(
 print(type(llm).__name__)
 ```
 
-## Model-string parsing
+Most applications only need the factory plus settings:
+
+```python
+from ooai_llm import AppSettings, create_llm
+
+settings = AppSettings()
+
+testing_llm = create_llm(alias="testing", settings=settings, temperature=0)
+reasoning_llm = create_llm(provider="anthropic", preset="reasoning", settings=settings)
+explicit_llm = create_llm("openai:gpt-5.4-mini", settings=settings)
+```
+
+Use `create_llm_bundle(...)` when you want the created model and resolved
+metadata together:
+
+```python
+from ooai_llm import create_llm_bundle
+
+bundle = create_llm_bundle(
+    alias="testing",
+    reasoning="fast",
+    temperature=0,
+)
+
+print(bundle.model.as_langchain())
+print(bundle.metadata.identity.litellm_model)
+print(bundle.reasoning.constructor_kwargs if bundle.reasoning else None)
+```
+
+## Environment
+
+The package accepts both native provider variables and `OOAI_` aliases:
+
+```bash
+export OPENAI_API_KEY="..."
+export ANTHROPIC_API_KEY="..."
+export DEEPSEEK_API_KEY="..."
+export MISTRAL_API_KEY="..."
+
+export OOAI_OPENAI_API_KEY="..."
+export OOAI_ANTHROPIC_API_KEY="..."
+export OOAI_DEEPSEEK_API_KEY="..."
+export OOAI_MISTRAL_API_KEY="..."
+```
+
+Google/Gemini and xAI variables are supported too, but are optional:
+
+```bash
+export GOOGLE_API_KEY="..."
+export GEMINI_API_KEY="..."
+export XAI_API_KEY="..."
+```
+
+## Model Strings
 
 ```python
 from ooai_llm import ModelString
@@ -98,11 +141,10 @@ model = ModelString.parse("gpt-5.4-mini")
 print(model.provider)       # Provider.OPENAI
 print(model.model_name)     # gpt-5.4-mini
 print(model.canonical())    # openai:gpt-5.4-mini
+print(model.as_litellm())   # openai/gpt-5.4-mini
 ```
 
-`ModelString` is a `RootModel[str]`, so it is easy to embed in other typed settings or request models.
-
-## Settings
+## Settings And Defaults
 
 ```python
 from ooai_llm import AppSettings
@@ -114,27 +156,7 @@ print(settings.resolve_model(provider="anthropic", preset="reasoning"))
 print(settings.default_llm_cache_path)
 ```
 
-### Supported environment variables
-
-The package accepts both app-prefixed and provider-native env vars.
-
-Examples:
-
-```bash
-export OOAI_OPENAI_API_KEY="..."
-export OPENAI_API_KEY="..."
-export OOAI_ANTHROPIC_API_KEY="..."
-export ANTHROPIC_API_KEY="..."
-export OOAI_GOOGLE_API_KEY="..."
-export GOOGLE_API_KEY="..."
-export GEMINI_API_KEY="..."
-```
-
-The factory temporarily mirrors app-prefixed values into the native provider variables expected by LangChain integration packages.
-
-## Default model presets
-
-Each provider ships with the same preset names:
+Default aliases and provider presets include:
 
 - `default`
 - `cheap`
@@ -145,30 +167,24 @@ Each provider ships with the same preset names:
 - `coding`
 - `vision`
 
-Global aliases of the same names are also available.
-
-## Live model discovery
+## Live Model Discovery
 
 ```python
-from ooai_llm import AppSettings, ListModelsConfig, get_model_info, list_model_ids, list_models
+from ooai_llm import AppSettings, ListModelsConfig, list_available_models
 
 settings = AppSettings()
-
-result = list_models(
+result = list_available_models(
     "openai",
     settings=settings,
     config=ListModelsConfig(limit=5),
 )
 
 for model in result.models:
-    print(model.model_id, model.display_name)
-
-print(list_model_ids("deepseek", settings=settings))
+    print(model.model_string, model.display_name)
 ```
 
-The discovery layer prefers official provider SDKs when they are available and
-falls back to documented REST endpoints when needed.
-
+Provider SDKs are preferred when installed. Supported REST fallbacks are used
+when SDK listing is unavailable or when you pass `ListModelsConfig(prefer_sdk=False)`.
 
 ## Reasoning
 
@@ -176,63 +192,39 @@ falls back to documented REST endpoints when needed.
 from ooai_llm import ReasoningConfig, build_reasoning_resolution, create_llm
 
 resolution = build_reasoning_resolution(
-    model="google_genai:gemini-2.5-pro",
-    reasoning=ReasoningConfig(budget_tokens=2048, include_thoughts=True),
+    model="openai:gpt-5.4-mini",
+    reasoning="deep",
 )
-
 print(resolution.constructor_kwargs)
-# {'thinking_budget': 2048, 'include_thoughts': True}
 
 llm = create_llm(
-    "openai:gpt-5.4-mini",
-    reasoning="deep",
-    temperature=0,
+    "anthropic:claude-sonnet-4-20250514",
+    reasoning=ReasoningConfig(effort="medium", summary="auto"),
 )
 ```
 
-String values such as `"fast"`, `"balanced"`, and `"deep"` are normalized
-into provider-specific kwargs. You can also pass a typed `ReasoningConfig` when
-you want more control.
-
-
-## LangChain + LiteLLM metadata
+## Metadata And Usage
 
 ```python
-from ooai_llm import create_llm_bundle
+from ooai_llm import BudgetPolicy, UsageRecorder, create_llm_bundle, make_litellm_cost_callback
 
 bundle = create_llm_bundle(
-    alias="testing",
-    reasoning="deep",
+    "openai:gpt-5.4-mini",
+    reasoning="fast",
 )
 
-print(bundle.model.as_langchain())
 print(bundle.metadata.identity.litellm_model)
 print(bundle.metadata.capabilities.raw_profile)
 print(bundle.metadata.pricing.input_cost_per_token)
-```
-
-The package stays LangChain-first for runtime creation, but uses the native
-`litellm` package to enrich pricing and canonical provider/model naming when
-it is installed. LangChain `.profile` remains the primary capability source.
-
-## Usage callbacks and budget tracking
-
-```python
-from ooai_llm import BudgetPolicy, UsageRecorder, make_litellm_cost_callback
 
 recorder = UsageRecorder()
 callback = make_litellm_cost_callback(
     recorder,
     budget=BudgetPolicy(warn_total_tokens=5000),
 )
-
-# later: litellm.success_callback = [callback]
 ```
 
-For LangChain-native usage metadata, use `build_langchain_usage_event(...)` or
-`estimate_and_record_langchain_usage(...)`.
-
-## Cache bootstrap
+## Cache Bootstrap
 
 ```python
 from ooai_llm import AppSettings, configure_global_llm_cache
@@ -242,108 +234,96 @@ cache = configure_global_llm_cache(settings)
 print(cache)
 ```
 
-By default, the SQLite cache is placed under:
+By default the SQLite cache is placed under:
 
 ```text
 {app_root}/.ooai/cache/llm/langchain_llm_cache.sqlite3
 ```
 
-You can override this with `OOAI_LLM__CACHE__PATH` or directly on `AppSettings`.
+Override it with `OOAI_LLM__CACHE__PATH` or `AppSettings(llm={"cache": {"path": ...}})`.
 
-## Testing
+## Development
 
-Run the full suite:
+Install the development dependencies:
+
+```bash
+pdm install -G test -G docs -G dev
+```
+
+Run the full checked suite with coverage:
 
 ```bash
 pdm run pytest
 ```
 
-Run only unit tests:
+Live provider tests are skipped by the default suite so local keys in `.env`
+do not trigger network calls accidentally.
+
+Run tiers directly without the global coverage gate:
 
 ```bash
-pdm run pytest -m unit
+pdm run pytest -m unit --no-cov
+pdm run pytest -m integration --no-cov
+pdm run pytest -m "e2e and not live" --no-cov
 ```
 
-Generate HTML coverage:
+Run live provider tests for your configured providers. This skips Gemini and xAI:
 
 ```bash
-pdm run pytest
-open build/reports/coverage/html/index.html
+OOAI_LIVE_PROVIDERS=openai,anthropic,deepseek,mistral pdm run pytest -m live --no-cov
 ```
 
-## Documentation
-
-Build docs locally:
+To make live e2e fail instead of skip when a selected provider is missing a key
+or SDK package:
 
 ```bash
-pdm install -G docs
-pdm run sphinx-build -b html docs docs/_build/html
+OOAI_REQUIRE_LIVE=true OOAI_LIVE_PROVIDERS=openai,anthropic,deepseek,mistral pdm run pytest -m live --no-cov
 ```
 
-Autobuild during development:
+`AppSettings` loads a local `.env` file. Keep real keys in `.env`, not
+`.env.example`.
+
+Build docs and distributions:
 
 ```bash
-pdm run sphinx-autobuild docs docs/_build/html
+pdm run sphinx-build -E -W --keep-going -b html docs docs/_build/html
+pdm build
+pdm run twine check dist/*
 ```
 
-## Project layout
+## Project Layout
 
 ```text
 src/ooai_llm/
-├── __init__.py
-├── cache.py
-├── factory.py
-├── providers.py
-├── py.typed
-├── reasoning.py
-├── settings.py
-└── types.py
+  cache.py       LangChain cache setup
+  callbacks.py   usage and cost events
+  catalog.py     live provider model listing
+  factory.py     LangChain chat-model creation
+  messages.py    message normalization
+  metadata.py    LangChain + LiteLLM metadata
+  providers.py   provider normalization
+  reasoning.py   provider reasoning kwargs
+  settings.py    Pydantic settings
+  types.py       ModelString
 
-docs/
-examples/
-tests/
+docs/             Sphinx + MyST docs
+examples/         runnable examples
+tests/            unit, integration, e2e, and live tests
 ```
 
-## Included workflows
+## Publishing
 
-- `ci.yml` for tests, coverage, docs build, and package build
-- `docs.yml` for standalone documentation validation
-- `release.yml` for tagged releases and trusted PyPI publishing
-- live `pytest -m live` smoke tests for provider model listing and model instantiation
+The repository includes:
 
-## Roadmap
+- `.github/workflows/ci.yml` for tests, coverage, docs build, and package build
+- `.github/workflows/docs.yml` for standalone docs validation
+- `.github/workflows/release.yml` for tagged PyPI releases with trusted publishing
+- `.readthedocs.yaml` for Read the Docs builds
 
-Short-term extensions that fit naturally with this package:
-
-- capability and pricing metadata merged from LangChain and LiteLLM
-- capability and pricing metadata merged from LangChain and LiteLLM
-- embedding-model factory helpers built on the same `ModelString` type
+Before publishing, configure the PyPI trusted publisher for `release.yml` and
+environment `pypi`, import the repo in Read the Docs, and update
+`docs/changelog.md`.
 
 ## License
 
 MIT
-
-
-## Configuration
-
-`ooai_llm` now separates runtime LLM configuration from live model-discovery
-configuration:
-
-- `AppSettings.llm` for defaults, aliases, and cache behavior
-- `AppSettings.credentials` for provider secrets and native env-var mapping
-- `AppSettings.catalog` for model-listing preferences, page sizes, SDK-vs-REST
-  behavior, and provider transport overrides
-
-Example:
-
-```python
-from ooai_llm import AppSettings
-
-settings = AppSettings(
-    catalog={
-        "deepseek": {"base_url": "https://api.deepseek.com/v1"},
-        "xai": {"prefer_sdk": False},
-    }
-)
-```
-

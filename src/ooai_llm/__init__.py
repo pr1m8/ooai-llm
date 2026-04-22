@@ -11,7 +11,7 @@ Design:
     - Re-export the core settings and typed model-string helpers that users are
       most likely to configure directly.
 
-Attributes:
+Public names:
     __all__: Curated public API.
 
 Examples:
@@ -25,12 +25,30 @@ from __future__ import annotations
 
 from warnings import warn
 
-from .callbacks import BudgetExceededError, BudgetPolicy, UsageEvent, UsageRecorder
-from .catalog import list_available_models
+from .cache import configure_global_llm_cache, resolve_llm_cache_path
+from .callbacks import (
+    BudgetExceededError,
+    BudgetPolicy,
+    UsageEvent,
+    UsageRecorder,
+    build_langchain_usage_event,
+    estimate_and_record_langchain_usage,
+    make_litellm_cost_callback,
+)
+from .catalog import (
+    ListModelsConfig,
+    ModelListResult,
+    ProviderClientInfo,
+    ProviderModelInfo,
+    get_provider_client_info,
+    list_available_models,
+    list_model_ids,
+)
 from .factory import create_llm, create_llm_bundle
 from .messages import MessageEstimate, NormalizedMessages, normalize_messages
 from .metadata import ModelInfo, get_model_info
-from .reasoning import ReasoningConfig
+from .providers import Provider, get_litellm_provider_prefix, infer_provider_from_model_name, normalize_provider_name
+from .reasoning import ReasoningConfig, ReasoningResolution, build_reasoning_resolution
 from .settings import AppSettings
 from .types import ModelString
 
@@ -42,17 +60,34 @@ __all__ = [
     "BudgetPolicy",
     "MessageEstimate",
     "ModelInfo",
+    "ModelListResult",
     "ModelString",
     "NormalizedMessages",
+    "Provider",
+    "ProviderClientInfo",
+    "ProviderModelInfo",
     "ReasoningConfig",
+    "ReasoningResolution",
     "UsageEvent",
     "UsageRecorder",
+    "build_langchain_usage_event",
+    "build_reasoning_resolution",
+    "configure_global_llm_cache",
     "create_llm",
     "create_llm_bundle",
+    "estimate_and_record_langchain_usage",
+    "get_litellm_provider_prefix",
     "get_model_info",
+    "get_provider_client_info",
+    "infer_provider_from_model_name",
+    "ListModelsConfig",
     "list_available_models",
+    "list_model_ids",
     "list_models",
+    "make_litellm_cost_callback",
     "normalize_messages",
+    "normalize_provider_name",
+    "resolve_llm_cache_path",
 ]
 
 _DEPRECATED_IMPORTS = {
@@ -63,42 +98,25 @@ _DEPRECATED_IMPORTS = {
     "ResolvedModelMeta": (".metadata", "ResolvedModelMeta"),
     "UsageSnapshot": (".metadata", "UsageSnapshot"),
     "build_capability_profile": (".metadata", "build_capability_profile"),
-    "build_langchain_usage_event": (".callbacks", "build_langchain_usage_event"),
     "build_model_profile": (".metadata", "build_model_profile"),
     "build_usage_snapshot": (".metadata", "build_usage_snapshot"),
     "calculate_cost": (".metadata", "calculate_cost"),
-    "configure_global_llm_cache": (".cache", "configure_global_llm_cache"),
-    "estimate_and_record_langchain_usage": (".callbacks", "estimate_and_record_langchain_usage"),
-    "get_litellm_provider_prefix": (".providers", "get_litellm_provider_prefix"),
-    "get_provider_client_info": (".catalog", "get_provider_client_info"),
-    "infer_provider_from_model_name": (".providers", "infer_provider_from_model_name"),
-    "ListModelsConfig": (".catalog", "ListModelsConfig"),
     "LiteLLMSettings": (".settings", "LiteLLMSettings"),
     "LLMCacheSettings": (".settings", "LLMCacheSettings"),
     "LLMSettings": (".settings", "LLMSettings"),
-    "make_litellm_cost_callback": (".callbacks", "make_litellm_cost_callback"),
     "native_environment_overrides": (".factory", "native_environment_overrides"),
-    "normalize_langchain_model_name": (".metadata", "normalize_langchain_model_name"),
     "normalize_model_name": (".metadata", "normalize_model_name"),
-    "normalize_provider_name": (".providers", "normalize_provider_name"),
-    "Provider": (".providers", "Provider"),
-    "ProviderClientInfo": (".catalog", "ProviderClientInfo"),
     "ProviderCredentials": (".settings", "ProviderCredentials"),
-    "ProviderModelInfo": (".catalog", "ProviderModelInfo"),
     "ProviderModelPresets": (".settings", "ProviderModelPresets"),
     "resolve_litellm_model_name": (".metadata", "resolve_litellm_model_name"),
-    "resolve_llm_cache_path": (".cache", "resolve_llm_cache_path"),
     "resolve_model_meta": (".metadata", "resolve_model_meta"),
     "resolve_model_meta_from_langchain_model": (".metadata", "resolve_model_meta_from_langchain_model"),
     "resolve_model_string": (".factory", "resolve_model_string"),
-    "ReasoningResolution": (".reasoning", "ReasoningResolution"),
-    "build_reasoning_resolution": (".reasoning", "build_reasoning_resolution"),
     "CatalogProviderSettings": (".settings", "CatalogProviderSettings"),
     "CatalogSettings": (".settings", "CatalogSettings"),
     "DefaultModelAliases": (".settings", "DefaultModelAliases"),
     "DefaultModelsByProvider": (".settings", "DefaultModelsByProvider"),
-    "ModelListResult": (".catalog", "ModelListResult"),
-    "list_model_ids": (".catalog", "list_model_ids"),
+    "normalize_langchain_model_name": (".metadata", "normalize_langchain_model_name"),
 }
 
 

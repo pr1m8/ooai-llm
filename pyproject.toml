@@ -120,11 +120,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/OWNER/ooai-llm"
+Homepage = "https://github.com/pr1m8/ooai-llm"
 Documentation = "https://ooai-llm.readthedocs.io/"
-Repository = "https://github.com/OWNER/ooai-llm"
-Issues = "https://github.com/OWNER/ooai-llm/issues"
-Changelog = "https://github.com/OWNER/ooai-llm/releases"
+Repository = "https://github.com/pr1m8/ooai-llm"
+Issues = "https://github.com/pr1m8/ooai-llm/issues"
+Changelog = "https://github.com/pr1m8/ooai-llm/releases"
 
 [tool.pdm]
 distribution = true
@@ -165,3 +165,4 @@ output = "build/reports/coverage/coverage.xml"
 max-line-length = 100
 paths = ["docs"]
 extensions = [".rst", ".md"]
+ignore-path = ["docs/_build", "docs/autoapi"]
