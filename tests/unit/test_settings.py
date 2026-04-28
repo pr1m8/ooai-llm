@@ -15,6 +15,7 @@ def test_settings_resolve_alias() -> None:
     """It should resolve semantic aliases."""
     settings = AppSettings()
     assert settings.resolve_model(alias="cheap") == "openai:gpt-5.4-nano"
+    assert settings.resolve_model(alias="latest") == "openai:gpt-5.5"
 
 
 @pytest.mark.unit
@@ -22,6 +23,7 @@ def test_settings_resolve_provider_preset() -> None:
     """It should resolve provider-specific presets."""
     settings = AppSettings()
     assert settings.resolve_model(provider="google", preset="reasoning") == "google_genai:gemini-2.5-pro"
+    assert settings.resolve_model(provider="google", preset="latest") == "google_genai:gemini-2.5-flash"
 
 
 @pytest.mark.unit

@@ -9,6 +9,7 @@ import types
 import pytest
 
 from ooai_llm import AppSettings, create_llm
+from ooai_llm.model_defaults import update_model_defaults
 from ooai_llm.factory import native_environment_overrides, resolve_model_string
 
 
@@ -92,3 +93,39 @@ def test_create_llm_applies_reasoning_kwargs(monkeypatch) -> None:
     )
 
     assert result["kwargs"]["reasoning"] == {"effort": "high", "summary": "auto"}
+
+
+@pytest.mark.integration
+def test_create_llm_uses_updated_latest_alias(monkeypatch) -> None:
+    """It should let updated settings drive convenience factory aliases."""
+    fake_litellm = types.ModuleType("litellm")
+    fake_litellm.model_cost = {
+        "openai/gpt-5.5": {"mode": "chat"},
+        "openai/gpt-5.5-pro": {"mode": "chat"},
+        "openai/gpt-5.4-nano": {"mode": "chat"},
+    }
+    monkeypatch.setitem(sys.modules, "litellm", fake_litellm)
+
+    def fake_init_chat_model(model: str | None = None, **kwargs):
+        return {"model": model, "kwargs": kwargs}
+
+    fake_chat_models = types.ModuleType("langchain.chat_models")
+    fake_chat_models.init_chat_model = fake_init_chat_model
+
+    fake_langchain = types.ModuleType("langchain")
+    fake_langchain.chat_models = fake_chat_models
+
+    monkeypatch.setitem(sys.modules, "langchain", fake_langchain)
+    monkeypatch.setitem(sys.modules, "langchain.chat_models", fake_chat_models)
+
+    updated = update_model_defaults(
+        AppSettings(),
+        providers=["openai"],
+        source="litellm",
+    ).settings
+
+    result = create_llm(alias="latest", settings=updated, temperature=0)
+    default_result = create_llm(settings=updated, temperature=0)
+
+    assert result["model"] == "openai:gpt-5.5"
+    assert default_result["model"] == "openai:gpt-5.5"

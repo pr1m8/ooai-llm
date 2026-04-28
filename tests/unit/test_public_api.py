@@ -15,6 +15,7 @@ def test_public_api_is_curated() -> None:
     assert {
         "ListModelsConfig",
         "Provider",
+        "build_llm_cache",
         "build_reasoning_resolution",
         "configure_global_llm_cache",
         "create_llm",
@@ -23,6 +24,8 @@ def test_public_api_is_curated() -> None:
         "list_models",
         "make_litellm_cost_callback",
         "ModelInfo",
+        "refresh_model_defaults",
+        "update_model_defaults",
     }.issubset(exported)
     assert "resolve_model_meta" not in exported
 

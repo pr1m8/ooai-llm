@@ -137,14 +137,14 @@ def test_openai_summary_only_defaults_effort_to_medium() -> None:
 
 @pytest.mark.unit
 def test_openai_budget_note_and_xhigh_mapping() -> None:
-    """It should note budget ignoring and xhigh mapping for OpenAI."""
+    """It should pass through xhigh effort for current OpenAI reasoning models."""
     resolution = build_reasoning_resolution(
         model="openai:gpt-5.4",
         reasoning=ReasoningConfig(effort="xhigh", budget_tokens=100),
     )
     assert resolution is not None
-    assert resolution.constructor_kwargs["reasoning"]["effort"] == "high"
-    assert len(resolution.notes) >= 2
+    assert resolution.constructor_kwargs["reasoning"]["effort"] == "xhigh"
+    assert len(resolution.notes) == 1
 
 
 @pytest.mark.unit
