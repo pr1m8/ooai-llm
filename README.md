@@ -209,6 +209,31 @@ print(settings.resolve_model(alias="latest"))
 print(settings.resolve_model(provider="anthropic", preset="reasoning"))
 ```
 
+Use `update_model_defaults(...)` when you want the refreshed settings plus a
+reusable override payload:
+
+```python
+from ooai_llm import AppSettings, create_llm, update_model_defaults
+
+update = update_model_defaults(
+    AppSettings(),
+    providers=["openai", "anthropic", "mistral"],
+    source="litellm",
+    output_format="env",
+)
+
+settings = update.settings
+llm = create_llm(alias="latest", settings=settings)
+print(update.output_text)
+```
+
+Or use the CLI to print or write those overrides:
+
+```bash
+ooai-llm models update --source litellm --providers openai,anthropic,mistral --format json
+ooai-llm models update --source auto --provider openai --format env --output .env.models
+```
+
 Use `source="litellm"` to derive defaults from LiteLLM's local model registry
 without provider-listing credentials. Use `source="provider"` for live provider
 catalogs only.

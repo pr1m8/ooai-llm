@@ -125,22 +125,36 @@ Refresh aliases and provider presets from live provider catalogs or LiteLLM
 metadata when you want convenience factories to track newer models:
 
 ```python
-from ooai_llm import AppSettings, create_llm, refresh_model_defaults
+from ooai_llm import AppSettings, create_llm, update_model_defaults
 
 settings = AppSettings()
-refresh = refresh_model_defaults(
+update = update_model_defaults(
     settings,
     providers=["openai", "anthropic", "mistral"],
     source="auto",
 )
 
-settings = refresh.settings
+settings = update.settings
 llm = create_llm(alias="latest", settings=settings)
 ```
 
 Use `source="provider"` to require live provider model-listing APIs, or
 `source="litellm"` to use LiteLLM's local registry without provider-listing
 credentials.
+
+The update helper returns:
+
+- `settings`: copied `AppSettings` ready for `create_llm(...)`
+- `overrides`: non-secret model-default overrides
+- `output_text`: rendered JSON or `.env` text when no output path is supplied
+- `output_path`: written file path when `output_path=...` is supplied
+
+The same operation is available from the CLI:
+
+```bash
+ooai-llm models update --source litellm --providers openai,anthropic,mistral
+ooai-llm models update --source auto --provider openai --format env --output .env.models
+```
 
 ## Cache behavior
 

@@ -94,22 +94,29 @@ result = list_available_models(
 )
 ```
 
-Refresh factory aliases and provider presets from live catalogs or LiteLLM
+Update factory aliases and provider presets from live catalogs or LiteLLM
 metadata:
 
 ```python
-from ooai_llm import AppSettings, refresh_model_defaults
+from ooai_llm import AppSettings, update_model_defaults
 
 settings = AppSettings()
-refresh = refresh_model_defaults(
+update = update_model_defaults(
     settings,
     providers=["openai", "anthropic", "mistral"],
     source="litellm",
 )
 
-settings = refresh.settings
+settings = update.settings
 print(settings.resolve_model(alias="latest"))
 print(settings.resolve_model(provider="mistral", preset="coding"))
+```
+
+Write reusable overrides from the CLI:
+
+```bash
+ooai-llm models update --source litellm --providers openai,anthropic,mistral --format json
+ooai-llm models update --source auto --provider openai --format env --output .env.models
 ```
 
 
