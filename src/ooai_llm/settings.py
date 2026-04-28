@@ -36,6 +36,7 @@ from .types import ModelString
 
 ModelPresetName = Literal[
     "default",
+    "latest",
     "cheap",
     "testing",
     "fast",
@@ -231,6 +232,7 @@ class ProviderModelPresets(BaseModel):
 
     Args:
         default: Recommended default model for general use.
+        latest: Latest recommended model when dynamic defaults are refreshed.
         cheap: Lowest-cost reasonable default.
         testing: Lightweight default for development and smoke tests.
         fast: Lower-latency model.
@@ -257,6 +259,7 @@ class ProviderModelPresets(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     default: str
+    latest: str | None = None
     cheap: str
     testing: str
     fast: str
@@ -274,7 +277,8 @@ class ProviderModelPresets(BaseModel):
         Returns:
             Configured model string.
         """
-        return getattr(self, preset)
+        value = getattr(self, preset)
+        return self.default if value is None else value
 
 
 class DefaultModelsByProvider(BaseModel):
@@ -295,6 +299,7 @@ class DefaultModelsByProvider(BaseModel):
     openai: ProviderModelPresets = Field(
         default_factory=lambda: ProviderModelPresets(
             default="openai:gpt-5.4-mini",
+            latest="openai:gpt-5.5",
             cheap="openai:gpt-5.4-nano",
             testing="openai:gpt-5.4-nano",
             fast="openai:gpt-5.4-mini",
@@ -392,6 +397,7 @@ class DefaultModelAliases(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     default: str = "openai:gpt-5.4-mini"
+    latest: str | None = "openai:gpt-5.5"
     cheap: str = "openai:gpt-5.4-nano"
     testing: str = "openai:gpt-5.4-nano"
     fast: str = "openai:gpt-5.4-mini"
@@ -409,7 +415,8 @@ class DefaultModelAliases(BaseModel):
         Returns:
             Configured model string.
         """
-        return getattr(self, alias)
+        value = getattr(self, alias)
+        return self.default if value is None else value
 
 
 class CatalogProviderSettings(BaseModel):
@@ -589,6 +596,18 @@ class LLMCacheSettings(BaseModel):
         path: Optional explicit cache path.
         filename: Cache filename when ``path`` is not explicitly provided.
         create_dirs: Whether parent directories should be created automatically.
+        ttl: Optional time-to-live in seconds for backends that support it.
+        redis_url: Redis connection URL for the ``redis`` backend.
+        redis_host: Redis host when ``redis_url`` is not supplied.
+        redis_port: Redis port when ``redis_url`` is not supplied.
+        redis_db: Redis database index when ``redis_url`` is not supplied.
+        redis_username: Redis username when ``redis_url`` is not supplied.
+        redis_password: Redis password when ``redis_url`` is not supplied.
+        redis_ssl: Whether Redis should use TLS when ``redis_url`` is absent.
+        redis_connection_kwargs: Additional Redis client constructor kwargs.
+        upstash_url: Upstash Redis REST URL.
+        upstash_token: Upstash Redis REST token.
+        sqlalchemy_url: SQLAlchemy database URL for the ``sqlalchemy`` backend.
 
     Examples:
         >>> cache = LLMCacheSettings()
@@ -603,6 +622,18 @@ class LLMCacheSettings(BaseModel):
     path: Path | None = None
     filename: str = "langchain_llm_cache.sqlite3"
     create_dirs: bool = True
+    ttl: int | None = Field(default=None, ge=1)
+    redis_url: str | None = None
+    redis_host: str = "localhost"
+    redis_port: int = Field(default=6379, ge=1, le=65535)
+    redis_db: int = Field(default=0, ge=0)
+    redis_username: str | None = None
+    redis_password: SecretStr | None = None
+    redis_ssl: bool = False
+    redis_connection_kwargs: dict[str, object] = Field(default_factory=dict)
+    upstash_url: str | None = None
+    upstash_token: SecretStr | None = None
+    sqlalchemy_url: str | None = None
 
 
 class LLMSettings(BaseModel):

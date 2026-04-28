@@ -209,6 +209,8 @@ def _map_openai_effort(effort: ReasoningEffortName) -> str | None:
         return "low"
     if effort == "medium":
         return "medium"
+    if effort in {"xhigh", "max"}:
+        return "xhigh"
     return "high"
 
 
@@ -344,10 +346,6 @@ def build_reasoning_resolution(
         if config.summary != "off":
             reasoning_kwargs["summary"] = config.summary
         resolution.constructor_kwargs["reasoning"] = reasoning_kwargs
-        if config.effort in {"xhigh", "max"}:
-            resolution.notes.append(
-                "OpenAI exposes low/medium/high effort through LangChain; xhigh/max were mapped to high."
-            )
         return resolution
 
     if resolved_provider is Provider.ANTHROPIC:

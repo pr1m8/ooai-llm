@@ -25,7 +25,16 @@ from __future__ import annotations
 
 from warnings import warn
 
-from .cache import configure_global_llm_cache, resolve_llm_cache_path
+from .cache import (
+    build_llm_cache,
+    build_memory_cache,
+    build_redis_cache,
+    build_sqlalchemy_cache,
+    build_sqlite_cache,
+    build_upstash_redis_cache,
+    configure_global_llm_cache,
+    resolve_llm_cache_path,
+)
 from .callbacks import (
     BudgetExceededError,
     BudgetPolicy,
@@ -47,6 +56,19 @@ from .catalog import (
 from .factory import create_llm, create_llm_bundle
 from .messages import MessageEstimate, NormalizedMessages, normalize_messages
 from .metadata import ModelInfo, get_model_info
+from .model_defaults import (
+    ModelDefaultCandidate,
+    ModelDefaultsRefreshResult,
+    ModelDefaultsUpdateResult,
+    ModelPresetRecommendation,
+    build_model_default_overrides,
+    model_default_overrides_to_env,
+    model_default_overrides_to_json,
+    recommend_provider_model_presets,
+    refresh_model_defaults,
+    render_model_default_overrides,
+    update_model_defaults,
+)
 from .providers import Provider, get_litellm_provider_prefix, infer_provider_from_model_name, normalize_provider_name
 from .reasoning import ReasoningConfig, ReasoningResolution, build_reasoning_resolution
 from .settings import AppSettings
@@ -60,7 +82,11 @@ __all__ = [
     "BudgetPolicy",
     "MessageEstimate",
     "ModelInfo",
+    "ModelDefaultCandidate",
+    "ModelDefaultsRefreshResult",
+    "ModelDefaultsUpdateResult",
     "ModelListResult",
+    "ModelPresetRecommendation",
     "ModelString",
     "NormalizedMessages",
     "Provider",
@@ -71,7 +97,14 @@ __all__ = [
     "UsageEvent",
     "UsageRecorder",
     "build_langchain_usage_event",
+    "build_llm_cache",
+    "build_memory_cache",
+    "build_model_default_overrides",
+    "build_redis_cache",
     "build_reasoning_resolution",
+    "build_sqlalchemy_cache",
+    "build_sqlite_cache",
+    "build_upstash_redis_cache",
     "configure_global_llm_cache",
     "create_llm",
     "create_llm_bundle",
@@ -85,9 +118,15 @@ __all__ = [
     "list_model_ids",
     "list_models",
     "make_litellm_cost_callback",
+    "model_default_overrides_to_env",
+    "model_default_overrides_to_json",
     "normalize_messages",
     "normalize_provider_name",
+    "recommend_provider_model_presets",
+    "refresh_model_defaults",
+    "render_model_default_overrides",
     "resolve_llm_cache_path",
+    "update_model_defaults",
 ]
 
 _DEPRECATED_IMPORTS = {
