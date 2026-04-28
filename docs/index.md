@@ -24,11 +24,12 @@ changelog
 
 - parsing and canonicalizing model strings
 - inferring providers from common model IDs
-- resolving model defaults like `cheap`, `testing`, or `reasoning`
+- resolving model defaults like `latest`, `cheap`, `testing`, or `reasoning`
 - loading credentials from both app-prefixed and native provider env vars
-- configuring a global SQLite-backed LangChain cache
+- configuring a global LangChain cache with SQLite, memory, SQLAlchemy, Redis, or Upstash Redis
 - creating chat models through a thin wrapper over LangChain's unified initializer
 - listing available models from provider SDKs and REST APIs
+- refreshing convenience defaults from live provider catalogs or LiteLLM metadata
 - joining LangChain capability profiles with LiteLLM pricing metadata
 - recording usage and cost events from LangChain or LiteLLM callbacks
 

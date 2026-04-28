@@ -2,6 +2,10 @@
 
 ## 0.3.0
 
+- Added Redis, Upstash Redis, memory, and SQLAlchemy cache bootstrap support
+  alongside the default SQLite cache.
+- Added provider-generic model default refresh from live catalogs or LiteLLM
+  metadata, plus a `latest` preset/alias for convenience factories.
 - Added live model discovery for OpenAI, Anthropic, Google GenAI, xAI,
   DeepSeek, and Mistral.
 - Added LangChain + LiteLLM model metadata helpers and usage/cost callbacks.

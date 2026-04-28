@@ -14,6 +14,9 @@ pdm add ooai-llm[anthropic]
 pdm add ooai-llm[deepseek]
 pdm add ooai-llm[mistral]
 pdm add ooai-llm[litellm]
+pdm add ooai-llm[redis]
+pdm add ooai-llm[upstash]
+pdm add ooai-llm[caches]
 ```
 
 Gemini and xAI support are available through the `google` and `xai` extras, but

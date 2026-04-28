@@ -121,6 +121,27 @@ settings = AppSettings(
 llm = create_llm(alias="reasoning", settings=settings)
 ```
 
+Refresh aliases and provider presets from live provider catalogs or LiteLLM
+metadata when you want convenience factories to track newer models:
+
+```python
+from ooai_llm import AppSettings, create_llm, refresh_model_defaults
+
+settings = AppSettings()
+refresh = refresh_model_defaults(
+    settings,
+    providers=["openai", "anthropic", "mistral"],
+    source="auto",
+)
+
+settings = refresh.settings
+llm = create_llm(alias="latest", settings=settings)
+```
+
+Use `source="provider"` to require live provider model-listing APIs, or
+`source="litellm"` to use LiteLLM's local registry without provider-listing
+credentials.
+
 ## Cache behavior
 
 Configure the global LangChain cache once at application startup:
@@ -138,6 +159,36 @@ Pass `cache=False` to disable caching for one model:
 
 ```python
 llm = create_llm(alias="testing", cache=False)
+```
+
+Configure Redis, Upstash Redis, memory, or SQLAlchemy by changing
+`llm.cache.backend`:
+
+```python
+settings = AppSettings(
+    llm={
+        "cache": {
+            "backend": "redis",
+            "redis_url": "redis://localhost:6379/0",
+            "ttl": 3600,
+        }
+    }
+)
+configure_global_llm_cache(settings)
+```
+
+```python
+settings = AppSettings(
+    llm={
+        "cache": {
+            "backend": "upstash_redis",
+            "upstash_url": "...",
+            "upstash_token": "...",
+            "ttl": 3600,
+        }
+    }
+)
+configure_global_llm_cache(settings)
 ```
 
 ## Recommended application wrapper

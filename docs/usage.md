@@ -18,6 +18,7 @@ from ooai_llm import AppSettings
 settings = AppSettings()
 
 assert settings.resolve_model(alias="cheap") == "openai:gpt-5.4-nano"
+assert settings.resolve_model(alias="latest") == "openai:gpt-5.5"
 reasoning_model = settings.resolve_model(provider="google", preset="reasoning")
 assert reasoning_model == "google_genai:gemini-2.5-pro"
 ```
@@ -30,6 +31,22 @@ from ooai_llm import AppSettings, configure_global_llm_cache
 settings = AppSettings()
 cache = configure_global_llm_cache(settings)
 print(cache)
+```
+
+Supported cache backends are `sqlite`, `memory`, `sqlalchemy`, `redis`, and
+`upstash_redis`:
+
+```python
+settings = AppSettings(
+    llm={
+        "cache": {
+            "backend": "redis",
+            "redis_url": "redis://localhost:6379/0",
+            "ttl": 3600,
+        }
+    }
+)
+configure_global_llm_cache(settings)
 ```
 
 ## Factory helper
@@ -75,6 +92,24 @@ result = list_available_models(
     "anthropic",
     config=ListModelsConfig(prefer_sdk=False, page_size=20),
 )
+```
+
+Refresh factory aliases and provider presets from live catalogs or LiteLLM
+metadata:
+
+```python
+from ooai_llm import AppSettings, refresh_model_defaults
+
+settings = AppSettings()
+refresh = refresh_model_defaults(
+    settings,
+    providers=["openai", "anthropic", "mistral"],
+    source="litellm",
+)
+
+settings = refresh.settings
+print(settings.resolve_model(alias="latest"))
+print(settings.resolve_model(provider="mistral", preset="coding"))
 ```
 
 

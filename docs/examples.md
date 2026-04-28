@@ -8,7 +8,7 @@ Runnable examples live in `examples/`.
 python examples/basic_usage.py
 ```
 
-This loads `AppSettings`, configures the SQLite-backed LangChain cache, and
+This loads `AppSettings`, configures the default SQLite-backed LangChain cache, and
 creates the configured `testing` chat model.
 
 ## Model strings
@@ -50,6 +50,12 @@ Override the provider list when needed:
 
 ```bash
 OOAI_EXAMPLE_PROVIDERS=openai,anthropic,deepseek,mistral python examples/live_provider_matrix.py
+```
+
+Refresh convenience defaults from live provider catalogs or LiteLLM metadata:
+
+```bash
+python examples/model_defaults_refresh.py
 ```
 
 ## Reasoning
