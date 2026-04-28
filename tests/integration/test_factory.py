@@ -129,3 +129,84 @@ def test_create_llm_uses_updated_latest_alias(monkeypatch) -> None:
 
     assert result["model"] == "openai:gpt-5.5"
     assert default_result["model"] == "openai:gpt-5.5"
+
+
+@pytest.mark.integration
+def test_create_llm_auto_refreshes_latest_alias(monkeypatch) -> None:
+    """It should refresh convenience aliases automatically when enabled."""
+    fake_litellm = types.ModuleType("litellm")
+    fake_litellm.model_cost = {
+        "openai/gpt-5.5": {"mode": "chat"},
+        "openai/gpt-5.4-nano": {"mode": "chat"},
+    }
+    monkeypatch.setitem(sys.modules, "litellm", fake_litellm)
+
+    def fake_init_chat_model(model: str | None = None, **kwargs):
+        return {"model": model, "kwargs": kwargs}
+
+    fake_chat_models = types.ModuleType("langchain.chat_models")
+    fake_chat_models.init_chat_model = fake_init_chat_model
+
+    fake_langchain = types.ModuleType("langchain")
+    fake_langchain.chat_models = fake_chat_models
+
+    monkeypatch.setitem(sys.modules, "langchain", fake_langchain)
+    monkeypatch.setitem(sys.modules, "langchain.chat_models", fake_chat_models)
+
+    settings = AppSettings(
+        llm={
+            "auto_refresh_models": {
+                "source": "litellm",
+                "providers": ["openai"],
+                "cache_seconds": 0,
+            }
+        }
+    )
+
+    result = create_llm(
+        alias="latest",
+        settings=settings,
+        auto_refresh_models=True,
+        temperature=0,
+    )
+
+    assert result["model"] == "openai:gpt-5.5"
+    assert result["kwargs"]["temperature"] == 0
+
+
+@pytest.mark.integration
+def test_create_llm_uses_settings_enabled_auto_refresh(monkeypatch) -> None:
+    """It should use settings-driven automatic refresh without a per-call flag."""
+    fake_litellm = types.ModuleType("litellm")
+    fake_litellm.model_cost = {
+        "openai/gpt-5.5": {"mode": "chat"},
+        "openai/gpt-5.4-mini": {"mode": "chat"},
+    }
+    monkeypatch.setitem(sys.modules, "litellm", fake_litellm)
+
+    def fake_init_chat_model(model: str | None = None, **kwargs):
+        return {"model": model, "kwargs": kwargs}
+
+    fake_chat_models = types.ModuleType("langchain.chat_models")
+    fake_chat_models.init_chat_model = fake_init_chat_model
+
+    fake_langchain = types.ModuleType("langchain")
+    fake_langchain.chat_models = fake_chat_models
+
+    monkeypatch.setitem(sys.modules, "langchain", fake_langchain)
+    monkeypatch.setitem(sys.modules, "langchain.chat_models", fake_chat_models)
+
+    settings = AppSettings(
+        llm={
+            "auto_refresh_models": {
+                "enabled": True,
+                "source": "litellm",
+                "providers": ["openai"],
+                "cache_seconds": 0,
+            }
+        }
+    )
+
+    result = create_llm(settings=settings, temperature=0)
+
+    assert result["model"] == "openai:gpt-5.5"

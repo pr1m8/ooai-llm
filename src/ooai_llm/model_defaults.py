@@ -6,7 +6,7 @@ Purpose:
     without hard-coding every provider release.
 
 Design:
-    - Keep factory calls deterministic; refresh is an explicit startup step.
+    - Keep factory refresh opt-in and cache automatic refresh results in-process.
     - Prefer provider-native model listings when credentials are available.
     - Use LiteLLM metadata as an optional no-credential fallback.
     - Select presets with transparent name/cost/capability heuristics and
@@ -31,6 +31,7 @@ import importlib
 import json
 from pathlib import Path
 import re
+from time import monotonic
 from typing import Any, Iterable, Literal, Mapping, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
@@ -42,6 +43,8 @@ from .types import ModelString
 
 ModelDefaultSource = Literal["auto", "provider", "litellm"]
 ModelDefaultsExportFormat = Literal["json", "env"]
+
+_AUTO_REFRESH_CACHE: dict[tuple[Any, ...], tuple[float, "ModelDefaultsRefreshResult"]] = {}
 
 _PRESET_NAMES: tuple[ModelPresetName, ...] = (
     "default",
@@ -610,6 +613,75 @@ def refresh_model_defaults(
         recommendations=recommendations,
         notes=notes,
     )
+
+
+def _auto_refresh_cache_key(settings: AppSettings) -> tuple[Any, ...]:
+    refresh_config = settings.llm.auto_refresh_models
+    providers = _normalize_providers(refresh_config.providers)
+    primary_provider = normalize_provider_name(refresh_config.primary_alias_provider)
+    credential_presence = tuple(
+        (provider.value, settings.credentials.get_api_key(provider) is not None)
+        for provider in providers
+    )
+    llm_seed = settings.llm.model_dump(
+        mode="json",
+        exclude={"auto_refresh_models", "cache"},
+    )
+    return (
+        json.dumps(llm_seed, sort_keys=True),
+        json.dumps(settings.catalog.model_dump(mode="json"), sort_keys=True),
+        json.dumps(settings.litellm.model_dump(mode="json"), sort_keys=True),
+        refresh_config.source,
+        tuple(provider.value for provider in providers),
+        primary_provider.value if primary_provider is not None else refresh_config.primary_alias_provider,
+        refresh_config.strict,
+        credential_presence,
+    )
+
+
+def auto_refresh_model_defaults(
+    settings: AppSettings | None = None,
+    *,
+    enabled: bool | None = None,
+    force: bool = False,
+) -> ModelDefaultsRefreshResult:
+    """Refresh model defaults according to factory auto-refresh settings.
+
+    Args:
+        settings: Base settings. Defaults to ``AppSettings()``.
+        enabled: Optional override for ``settings.llm.auto_refresh_models.enabled``.
+        force: Bypass the process-local refresh cache.
+
+    Returns:
+        Refresh result. When automatic refresh is disabled, the original
+        settings are returned unchanged with no recommendations.
+    """
+    resolved_settings = settings or AppSettings()
+    refresh_config = resolved_settings.llm.auto_refresh_models
+    should_refresh = refresh_config.enabled if enabled is None else enabled
+    if not should_refresh:
+        return ModelDefaultsRefreshResult(settings=resolved_settings)
+
+    cache_seconds = refresh_config.cache_seconds
+    cache_key = _auto_refresh_cache_key(resolved_settings)
+    now = monotonic()
+    if not force and cache_seconds != 0:
+        cached = _AUTO_REFRESH_CACHE.get(cache_key)
+        if cached is not None:
+            cached_at, cached_result = cached
+            if cache_seconds is None or now - cached_at <= cache_seconds:
+                return cached_result
+
+    result = refresh_model_defaults(
+        resolved_settings,
+        providers=refresh_config.providers,
+        source=refresh_config.source,
+        primary_alias_provider=refresh_config.primary_alias_provider,
+        strict=refresh_config.strict,
+    )
+    if cache_seconds != 0:
+        _AUTO_REFRESH_CACHE[cache_key] = (now, result)
+    return result
 
 
 def build_model_default_overrides(

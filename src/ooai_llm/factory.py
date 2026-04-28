@@ -69,6 +69,37 @@ def resolve_model_string(
     return ModelString.parse(resolved)
 
 
+def resolve_factory_settings(
+    settings: AppSettings | None = None,
+    *,
+    auto_refresh_models: bool | None = None,
+    force_model_refresh: bool = False,
+) -> AppSettings:
+    """Resolve settings for a factory call, applying opt-in model refresh.
+
+    Args:
+        settings: Optional application settings.
+        auto_refresh_models: Optional per-call override for
+            ``settings.llm.auto_refresh_models.enabled``.
+        force_model_refresh: Whether to bypass the process-local refresh cache.
+
+    Returns:
+        Original or refreshed settings.
+    """
+    resolved_settings = settings or AppSettings()
+    if auto_refresh_models is False:
+        return resolved_settings
+    if auto_refresh_models is True or resolved_settings.llm.auto_refresh_models.enabled:
+        from .model_defaults import auto_refresh_model_defaults
+
+        return auto_refresh_model_defaults(
+            resolved_settings,
+            enabled=auto_refresh_models,
+            force=force_model_refresh,
+        ).settings
+    return resolved_settings
+
+
 @contextmanager
 def native_environment_overrides(settings: AppSettings, *, force: bool = False) -> Iterator[None]:
     """Temporarily set provider-native environment variables from settings.
@@ -107,6 +138,8 @@ def create_llm(
     preset: ModelPresetName = "default",
     cache: "BaseCache | bool | None" = None,
     reasoning: ReasoningInput = None,
+    auto_refresh_models: bool | None = None,
+    force_model_refresh: bool = False,
     configurable_fields: str | list[str] | tuple[str, ...] | None = None,
     config_prefix: str | None = None,
     **kwargs: Any,
@@ -122,6 +155,10 @@ def create_llm(
         cache: Optional per-model cache override.
         reasoning: Optional semantic reasoning preset, reasoning-effort string,
             or typed :class:`ooai_llm.reasoning.ReasoningConfig`.
+        auto_refresh_models: Opt-in model-default refresh before model
+            resolution. Defaults to ``settings.llm.auto_refresh_models.enabled``.
+        force_model_refresh: Bypass the process-local model-default refresh
+            cache when automatic refresh is enabled.
         configurable_fields: Optional LangChain configurable field spec.
         config_prefix: Optional LangChain configuration prefix.
         **kwargs: Additional keyword arguments passed to ``init_chat_model``.
@@ -135,7 +172,11 @@ def create_llm(
     """
     from langchain.chat_models import init_chat_model
 
-    resolved_settings = settings or AppSettings()
+    resolved_settings = resolve_factory_settings(
+        settings,
+        auto_refresh_models=auto_refresh_models,
+        force_model_refresh=force_model_refresh,
+    )
     resolved_model = resolve_model_string(
         settings=resolved_settings,
         model=model,
@@ -183,6 +224,8 @@ def create_llm_bundle(
     preset: ModelPresetName = "default",
     cache: "BaseCache | bool | None" = None,
     reasoning: ReasoningInput = None,
+    auto_refresh_models: bool | None = None,
+    force_model_refresh: bool = False,
     billing_model_name: str | None = None,
     messages: MessagesLike | None = None,
     tools: list[Any] | tuple[Any, ...] | None = None,
@@ -200,6 +243,10 @@ def create_llm_bundle(
         preset: Provider preset used with ``provider``.
         cache: Optional per-model cache override.
         reasoning: Optional reasoning preset or typed config.
+        auto_refresh_models: Opt-in model-default refresh before model
+            resolution. Defaults to ``settings.llm.auto_refresh_models.enabled``.
+        force_model_refresh: Bypass the process-local model-default refresh
+            cache when automatic refresh is enabled.
         billing_model_name: Optional explicit LiteLLM billing-model override.
         messages: Optional message input used for best-effort token estimates.
         tools: Optional tool schema list used for token estimation.
@@ -211,7 +258,11 @@ def create_llm_bundle(
         Convenience bundle containing the created LLM, the typed model string,
         resolved metadata, and the applied reasoning resolution.
     """
-    resolved_settings = settings or AppSettings()
+    resolved_settings = resolve_factory_settings(
+        settings,
+        auto_refresh_models=auto_refresh_models,
+        force_model_refresh=force_model_refresh,
+    )
     resolved_model = resolve_model_string(
         settings=resolved_settings,
         model=model,
@@ -225,6 +276,7 @@ def create_llm_bundle(
         provider=provider,
         cache=cache,
         reasoning=reasoning,
+        auto_refresh_models=False,
         configurable_fields=configurable_fields,
         config_prefix=config_prefix,
         **kwargs,

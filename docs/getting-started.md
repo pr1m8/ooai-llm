@@ -63,6 +63,14 @@ as `latest` to follow provider catalogs or LiteLLM metadata:
 ooai-llm models update --source litellm --providers openai,anthropic,mistral
 ```
 
+Or let factories refresh automatically by opting in:
+
+```bash
+OOAI_LLM__AUTO_REFRESH_MODELS__ENABLED=true
+OOAI_LLM__AUTO_REFRESH_MODELS__SOURCE=litellm
+OOAI_LLM__AUTO_REFRESH_MODELS__PROVIDERS='["openai","anthropic","mistral"]'
+```
+
 ## Developer setup
 
 ```bash

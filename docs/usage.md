@@ -119,6 +119,28 @@ ooai-llm models update --source litellm --providers openai,anthropic,mistral --f
 ooai-llm models update --source auto --provider openai --format env --output .env.models
 ```
 
+Enable factory-time automatic refresh when the application should refresh
+aliases before model creation:
+
+```python
+from ooai_llm import AppSettings, create_llm
+
+settings = AppSettings(
+    llm={
+        "auto_refresh_models": {
+            "enabled": True,
+            "source": "auto",
+            "providers": ["openai", "anthropic", "mistral"],
+        }
+    }
+)
+
+llm = create_llm(alias="latest", settings=settings)
+```
+
+This path is opt-in and cached for one hour by default. Use
+`force_model_refresh=True` on a factory call to bypass the cache once.
+
 
 ## Reasoning
 

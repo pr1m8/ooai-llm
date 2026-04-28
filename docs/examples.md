@@ -56,6 +56,11 @@ Refresh convenience defaults from live provider catalogs or LiteLLM metadata:
 
 ```bash
 python examples/model_defaults_refresh.py
+ooai-llm models update --source litellm --providers openai,anthropic,mistral
+OOAI_LLM__AUTO_REFRESH_MODELS__ENABLED=true \
+OOAI_LLM__AUTO_REFRESH_MODELS__SOURCE=litellm \
+OOAI_LLM__AUTO_REFRESH_MODELS__PROVIDERS='["openai"]' \
+python examples/basic_usage.py
 ```
 
 ## Reasoning

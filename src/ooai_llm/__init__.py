@@ -53,7 +53,7 @@ from .catalog import (
     list_available_models,
     list_model_ids,
 )
-from .factory import create_llm, create_llm_bundle
+from .factory import create_llm, create_llm_bundle, resolve_factory_settings
 from .messages import MessageEstimate, NormalizedMessages, normalize_messages
 from .metadata import ModelInfo, get_model_info
 from .model_defaults import (
@@ -61,6 +61,7 @@ from .model_defaults import (
     ModelDefaultsRefreshResult,
     ModelDefaultsUpdateResult,
     ModelPresetRecommendation,
+    auto_refresh_model_defaults,
     build_model_default_overrides,
     model_default_overrides_to_env,
     model_default_overrides_to_json,
@@ -71,7 +72,7 @@ from .model_defaults import (
 )
 from .providers import Provider, get_litellm_provider_prefix, infer_provider_from_model_name, normalize_provider_name
 from .reasoning import ReasoningConfig, ReasoningResolution, build_reasoning_resolution
-from .settings import AppSettings
+from .settings import AppSettings, ModelDefaultsAutoRefreshSettings
 from .types import ModelString
 
 list_models = list_available_models
@@ -85,6 +86,7 @@ __all__ = [
     "ModelDefaultCandidate",
     "ModelDefaultsRefreshResult",
     "ModelDefaultsUpdateResult",
+    "ModelDefaultsAutoRefreshSettings",
     "ModelListResult",
     "ModelPresetRecommendation",
     "ModelString",
@@ -96,6 +98,7 @@ __all__ = [
     "ReasoningResolution",
     "UsageEvent",
     "UsageRecorder",
+    "auto_refresh_model_defaults",
     "build_langchain_usage_event",
     "build_llm_cache",
     "build_memory_cache",
@@ -126,6 +129,7 @@ __all__ = [
     "refresh_model_defaults",
     "render_model_default_overrides",
     "resolve_llm_cache_path",
+    "resolve_factory_settings",
     "update_model_defaults",
 ]
 

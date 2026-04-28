@@ -156,6 +156,48 @@ ooai-llm models update --source litellm --providers openai,anthropic,mistral
 ooai-llm models update --source auto --provider openai --format env --output .env.models
 ```
 
+The CLI does not mutate package defaults. It prints or writes overrides you can
+load into your process environment, merge into your own config, or copy into
+`.env`.
+
+Factory-time refresh is also available when you want automatic alias updates at
+runtime. It is disabled by default so normal model construction does not make
+network calls or depend on optional LiteLLM metadata.
+
+```python
+from ooai_llm import AppSettings, create_llm
+
+settings = AppSettings(
+    llm={
+        "auto_refresh_models": {
+            "enabled": True,
+            "source": "litellm",
+            "providers": ["openai", "anthropic", "mistral"],
+        }
+    }
+)
+
+llm = create_llm(alias="latest", settings=settings)
+```
+
+You can also force it for one factory call:
+
+```python
+llm = create_llm(alias="latest", settings=settings, auto_refresh_models=True)
+```
+
+Equivalent `.env` settings:
+
+```bash
+OOAI_LLM__AUTO_REFRESH_MODELS__ENABLED=true
+OOAI_LLM__AUTO_REFRESH_MODELS__SOURCE=litellm
+OOAI_LLM__AUTO_REFRESH_MODELS__PROVIDERS='["openai","anthropic","mistral"]'
+```
+
+Automatic refresh uses `auto_refresh_models.cache_seconds` as a process-local
+TTL. Set it to `0` to refresh on every factory call, or pass
+`force_model_refresh=True` to bypass the cache once.
+
 ## Cache behavior
 
 Configure the global LangChain cache once at application startup:

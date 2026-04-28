@@ -4,7 +4,7 @@ build-backend = "pdm.backend"
 
 [project]
 name = "ooai-llm"
-version = "0.3.0"
+version = "0.3.1"
 description = "Typed LLM settings, LangChain-first factories, LiteLLM metadata enrichment, and callback helpers."
 readme = "README.md"
 requires-python = ">=3.13"

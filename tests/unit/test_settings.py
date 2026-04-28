@@ -27,6 +27,31 @@ def test_settings_resolve_provider_preset() -> None:
 
 
 @pytest.mark.unit
+def test_model_auto_refresh_settings_are_opt_in() -> None:
+    """It should keep factory-time model refresh disabled by default."""
+    settings = AppSettings()
+    assert settings.llm.auto_refresh_models.enabled is False
+    assert settings.llm.auto_refresh_models.source == "auto"
+    assert settings.llm.auto_refresh_models.cache_seconds == 3600
+
+
+@pytest.mark.unit
+def test_model_auto_refresh_settings_load_from_env(monkeypatch) -> None:
+    """It should load factory-time model refresh settings from nested env vars."""
+    monkeypatch.setenv("OOAI_LLM__AUTO_REFRESH_MODELS__ENABLED", "true")
+    monkeypatch.setenv("OOAI_LLM__AUTO_REFRESH_MODELS__SOURCE", "litellm")
+    monkeypatch.setenv("OOAI_LLM__AUTO_REFRESH_MODELS__PROVIDERS", '["openai","mistral"]')
+    monkeypatch.setenv("OOAI_LLM__AUTO_REFRESH_MODELS__CACHE_SECONDS", "0")
+
+    settings = AppSettings()
+
+    assert settings.llm.auto_refresh_models.enabled is True
+    assert settings.llm.auto_refresh_models.source == "litellm"
+    assert settings.llm.auto_refresh_models.providers == ["openai", "mistral"]
+    assert settings.llm.auto_refresh_models.cache_seconds == 0
+
+
+@pytest.mark.unit
 def test_default_cache_path_is_under_hidden_app_dir(tmp_path: Path) -> None:
     """It should place the default cache under the hidden app directory."""
     settings = AppSettings(app_root=tmp_path)

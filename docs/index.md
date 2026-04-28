@@ -30,6 +30,7 @@ changelog
 - creating chat models through a thin wrapper over LangChain's unified initializer
 - listing available models from provider SDKs and REST APIs
 - refreshing convenience defaults from live provider catalogs or LiteLLM metadata
+- automatically refreshing convenience defaults during factory calls when enabled
 - joining LangChain capability profiles with LiteLLM pricing metadata
 - recording usage and cost events from LangChain or LiteLLM callbacks
 

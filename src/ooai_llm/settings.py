@@ -587,6 +587,38 @@ class LiteLLMSettings(BaseModel):
     failure_callbacks: list[str] = Field(default_factory=list)
 
 
+class ModelDefaultsAutoRefreshSettings(BaseModel):
+    """Factory-time model-default refresh settings.
+
+    Args:
+        enabled: Whether factories should refresh model defaults before model
+            resolution.
+        source: Refresh source. ``"auto"`` uses provider catalogs when a
+            credential is configured and falls back to LiteLLM metadata.
+        providers: Optional provider list. Defaults to every supported provider.
+        primary_alias_provider: Provider whose refreshed presets update global
+            aliases such as ``alias="latest"``.
+        strict: Whether refresh failures should raise instead of preserving
+            existing defaults.
+        cache_seconds: Process-local TTL for automatic refresh results. Set to
+            ``0`` to refresh on every factory call.
+
+    Examples:
+        >>> cfg = ModelDefaultsAutoRefreshSettings(enabled=True, providers=["openai"])
+        >>> cfg.source
+        'auto'
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    source: Literal["auto", "provider", "litellm"] = "auto"
+    providers: list[str] | None = None
+    primary_alias_provider: str = "openai"
+    strict: bool = False
+    cache_seconds: int | None = Field(default=3600, ge=0)
+
+
 class LLMCacheSettings(BaseModel):
     """LLM cache configuration.
 
@@ -643,6 +675,7 @@ class LLMSettings(BaseModel):
         default_model: Fallback model when no alias or provider default is used.
         defaults_by_provider: Default model preset bundles per provider.
         aliases: Global semantic aliases.
+        auto_refresh_models: Factory-time model-default refresh settings.
         cache: Global cache settings.
 
     Examples:
@@ -656,6 +689,9 @@ class LLMSettings(BaseModel):
     default_model: str = "openai:gpt-5.4-mini"
     defaults_by_provider: DefaultModelsByProvider = Field(default_factory=DefaultModelsByProvider)
     aliases: DefaultModelAliases = Field(default_factory=DefaultModelAliases)
+    auto_refresh_models: ModelDefaultsAutoRefreshSettings = Field(
+        default_factory=ModelDefaultsAutoRefreshSettings
+    )
     cache: LLMCacheSettings = Field(default_factory=LLMCacheSettings)
 
 

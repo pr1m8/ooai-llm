@@ -9,7 +9,12 @@ import pytest
 
 from ooai_llm import AppSettings, refresh_model_defaults, update_model_defaults
 from ooai_llm.catalog import ModelListResult, ProviderModelInfo
-from ooai_llm.model_defaults import ModelDefaultCandidate, recommend_provider_model_presets
+from ooai_llm.model_defaults import (
+    ModelDefaultCandidate,
+    ModelDefaultsRefreshResult,
+    auto_refresh_model_defaults,
+    recommend_provider_model_presets,
+)
 from ooai_llm.providers import Provider, normalize_provider_name
 
 
@@ -219,6 +224,52 @@ def test_update_model_defaults_exports_json_and_env(monkeypatch: pytest.MonkeyPa
     assert env_result.output_path == env_path.resolve()
     assert "OOAI_LLM__DEFAULT_MODEL=openai:gpt-5.5" in env_text
     assert "OOAI_LLM__DEFAULTS_BY_PROVIDER__OPENAI__LATEST=openai:gpt-5.5" in env_text
+
+
+@pytest.mark.unit
+def test_auto_refresh_model_defaults_is_disabled_by_default() -> None:
+    """It should leave settings unchanged unless automatic refresh is enabled."""
+    settings = AppSettings()
+    result = auto_refresh_model_defaults(settings)
+
+    assert result.settings is settings
+    assert result.recommendations == {}
+    assert result.notes == []
+
+
+@pytest.mark.unit
+def test_auto_refresh_model_defaults_uses_process_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    """It should avoid repeated catalog refreshes within the configured TTL."""
+    import ooai_llm.model_defaults as model_defaults
+
+    model_defaults._AUTO_REFRESH_CACHE.clear()
+    calls = 0
+    settings = AppSettings(
+        llm={
+            "auto_refresh_models": {
+                "enabled": True,
+                "source": "litellm",
+                "providers": ["openai"],
+            }
+        }
+    )
+    refreshed_llm = settings.llm.model_copy(update={"default_model": "openai:gpt-5.5"})
+    refreshed_settings = settings.model_copy(update={"llm": refreshed_llm})
+
+    def fake_refresh_model_defaults(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return ModelDefaultsRefreshResult(settings=refreshed_settings)
+
+    monkeypatch.setattr(model_defaults, "refresh_model_defaults", fake_refresh_model_defaults)
+
+    first = auto_refresh_model_defaults(settings)
+    second = auto_refresh_model_defaults(settings)
+
+    assert first.settings.llm.default_model == "openai:gpt-5.5"
+    assert second.settings.llm.default_model == "openai:gpt-5.5"
+    assert calls == 1
+    model_defaults._AUTO_REFRESH_CACHE.clear()
 
 
 @pytest.mark.unit

@@ -30,6 +30,7 @@ It is not a router, proxy, agent framework, or hosted model catalog.
 - `create_llm_bundle(...)`, which returns the model, resolved metadata, and reasoning resolution together.
 - Live model listing through provider SDKs or REST fallbacks.
 - Provider-generic default refresh from live model catalogs or LiteLLM metadata.
+- Opt-in automatic factory refresh so aliases such as `latest` can update at runtime.
 - LangChain profile + LiteLLM pricing metadata in one `ModelInfo` object.
 - Provider-aware reasoning kwargs for OpenAI, Anthropic, Gemini, xAI, DeepSeek, and Mistral.
 - Usage and cost helpers for LangChain metadata and LiteLLM callbacks.
@@ -237,6 +238,37 @@ ooai-llm models update --source auto --provider openai --format env --output .en
 Use `source="litellm"` to derive defaults from LiteLLM's local model registry
 without provider-listing credentials. Use `source="provider"` for live provider
 catalogs only.
+
+Automatic refresh is opt-in for factory calls. Use this when you want
+`create_llm(...)` to refresh convenience defaults before resolving aliases:
+
+```python
+from ooai_llm import AppSettings, create_llm
+
+settings = AppSettings(
+    llm={
+        "auto_refresh_models": {
+            "enabled": True,
+            "source": "litellm",
+            "providers": ["openai", "anthropic", "mistral"],
+        }
+    }
+)
+
+llm = create_llm(alias="latest", settings=settings)
+```
+
+The same setting can be enabled from `.env`:
+
+```bash
+OOAI_LLM__AUTO_REFRESH_MODELS__ENABLED=true
+OOAI_LLM__AUTO_REFRESH_MODELS__SOURCE=litellm
+OOAI_LLM__AUTO_REFRESH_MODELS__PROVIDERS='["openai","anthropic","mistral"]'
+```
+
+Automatic refresh uses a one-hour process-local cache by default. Set
+`OOAI_LLM__AUTO_REFRESH_MODELS__CACHE_SECONDS=0` to refresh on every factory
+call, or pass `force_model_refresh=True` for one call.
 
 ## Reasoning
 
