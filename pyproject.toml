@@ -57,6 +57,16 @@ mistral = [
 litellm = [
   "litellm>=1.74.0",
 ]
+redis = [
+  "redis>=5.0.0",
+]
+upstash = [
+  "upstash-redis>=1.2.0",
+]
+caches = [
+  "redis>=5.0.0",
+  "upstash-redis>=1.2.0",
+]
 providers = [
   "langchain-openai>=0.3.0",
   "openai>=1.0.0",
@@ -83,6 +93,8 @@ all = [
   "langchain-mistralai>=0.2.0",
   "mistralai>=1.0.0",
   "litellm>=1.74.0",
+  "redis>=5.0.0",
+  "upstash-redis>=1.2.0",
 ]
 docs = [
   "sphinx>=9.1.0",
@@ -125,6 +137,9 @@ Documentation = "https://ooai-llm.readthedocs.io/"
 Repository = "https://github.com/pr1m8/ooai-llm"
 Issues = "https://github.com/pr1m8/ooai-llm/issues"
 Changelog = "https://github.com/pr1m8/ooai-llm/releases"
+
+[project.scripts]
+ooai-llm = "ooai_llm.cli:main"
 
 [tool.pdm]
 distribution = true

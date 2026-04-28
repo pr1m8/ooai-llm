@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "all", "anthropic", "deepseek", "dev", "docs", "google", "litellm", "mistral", "openai", "providers", "test", "xai"]
+groups = ["default", "all", "anthropic", "caches", "deepseek", "dev", "docs", "google", "litellm", "mistral", "openai", "providers", "redis", "test", "upstash", "xai"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:0b534070288483ece1b6caa4a9f48838ba032765555fb3fa21b78fdf92a02e6f"
+content_hash = "sha256:ffae98e0d334414c2cb4522f545076e27e39c83be5bf3b0b8838b79d218e754b"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -2644,6 +2644,19 @@ files = [
 ]
 
 [[package]]
+name = "redis"
+version = "7.4.0"
+requires_python = ">=3.10"
+summary = "Python client for Redis database and key-value store"
+dependencies = [
+    "async-timeout>=4.0.3; python_full_version < \"3.11.3\"",
+]
+files = [
+    {file = "redis-7.4.0-py3-none-any.whl", hash = "sha256:a9c74a5c893a5ef8455a5adb793a31bb70feb821c86eccb62eebef5a19c429ec"},
+    {file = "redis-7.4.0.tar.gz", hash = "sha256:64a6ea7bf567ad43c964d2c30d82853f8df927c5c9017766c55a1d1ed95d18ad"},
+]
+
+[[package]]
 name = "referencing"
 version = "0.37.0"
 summary = ""
@@ -3471,6 +3484,19 @@ dependencies = [
 files = [
     {file = "typing_inspection-0.4.2-py3-none-any.whl", hash = "sha256:4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7"},
     {file = "typing_inspection-0.4.2.tar.gz", hash = "sha256:ba561c48a67c5958007083d386c3295464928b01faa735ab8547c5692e87f464"},
+]
+
+[[package]]
+name = "upstash-redis"
+version = "1.7.0"
+requires_python = "<4.0,>=3.8"
+summary = "Serverless Redis SDK from Upstash"
+dependencies = [
+    "httpx<1,>=0.23.0",
+]
+files = [
+    {file = "upstash_redis-1.7.0-py3-none-any.whl", hash = "sha256:6c17b4cd1f88bd0d34d978b9cf13041032482f7dfb4cdf8e00f6f6277db0006a"},
+    {file = "upstash_redis-1.7.0.tar.gz", hash = "sha256:19b46dff2d81b89da5cbfb23a38232f7ca3b9ba441b22a1df766c64972d936d1"},
 ]
 
 [[package]]
