@@ -25,10 +25,11 @@ It is not a router, proxy, agent framework, or hosted model catalog.
 - Provider inference for OpenAI, Anthropic, Google GenAI, xAI, DeepSeek, and Mistral.
 - `AppSettings` with provider credentials, default aliases, provider presets, cache settings, catalog settings, and LiteLLM settings.
 - Native and app-prefixed credential env vars, such as `OPENAI_API_KEY` and `OOAI_OPENAI_API_KEY`.
-- SQLite-backed LangChain global cache bootstrap.
+- LangChain global cache bootstrap for SQLite, memory, SQLAlchemy, Redis, and Upstash Redis.
 - `create_llm(...)`, a thin wrapper around LangChain `init_chat_model(...)`.
 - `create_llm_bundle(...)`, which returns the model, resolved metadata, and reasoning resolution together.
 - Live model listing through provider SDKs or REST fallbacks.
+- Provider-generic default refresh from live model catalogs or LiteLLM metadata.
 - LangChain profile + LiteLLM pricing metadata in one `ModelInfo` object.
 - Provider-aware reasoning kwargs for OpenAI, Anthropic, Gemini, xAI, DeepSeek, and Mistral.
 - Usage and cost helpers for LangChain metadata and LiteLLM callbacks.
@@ -56,6 +57,9 @@ pdm add ooai-llm[anthropic]
 pdm add ooai-llm[deepseek]
 pdm add ooai-llm[mistral]
 pdm add ooai-llm[litellm]
+pdm add ooai-llm[redis]
+pdm add ooai-llm[upstash]
+pdm add ooai-llm[caches]
 ```
 
 Gemini and xAI are available as `ooai-llm[google]` and `ooai-llm[xai]`, but you
@@ -159,6 +163,7 @@ print(settings.default_llm_cache_path)
 Default aliases and provider presets include:
 
 - `default`
+- `latest`
 - `cheap`
 - `testing`
 - `fast`
@@ -185,6 +190,28 @@ for model in result.models:
 
 Provider SDKs are preferred when installed. Supported REST fallbacks are used
 when SDK listing is unavailable or when you pass `ListModelsConfig(prefer_sdk=False)`.
+
+Refresh convenience factory defaults once at startup when you want aliases and
+provider presets to follow newer models:
+
+```python
+from ooai_llm import AppSettings, refresh_model_defaults
+
+settings = AppSettings()
+refresh = refresh_model_defaults(
+    settings,
+    providers=["openai", "anthropic", "mistral"],
+    source="auto",
+)
+
+settings = refresh.settings
+print(settings.resolve_model(alias="latest"))
+print(settings.resolve_model(provider="anthropic", preset="reasoning"))
+```
+
+Use `source="litellm"` to derive defaults from LiteLLM's local model registry
+without provider-listing credentials. Use `source="provider"` for live provider
+catalogs only.
 
 ## Reasoning
 
@@ -241,6 +268,35 @@ By default the SQLite cache is placed under:
 ```
 
 Override it with `OOAI_LLM__CACHE__PATH` or `AppSettings(llm={"cache": {"path": ...}})`.
+
+Use Redis or Upstash Redis for a shared application cache:
+
+```python
+settings = AppSettings(
+    llm={
+        "cache": {
+            "backend": "redis",
+            "redis_url": "redis://localhost:6379/0",
+            "ttl": 3600,
+        }
+    }
+)
+configure_global_llm_cache(settings)
+```
+
+```python
+settings = AppSettings(
+    llm={
+        "cache": {
+            "backend": "upstash_redis",
+            "upstash_url": "...",
+            "upstash_token": "...",
+            "ttl": 3600,
+        }
+    }
+)
+configure_global_llm_cache(settings)
+```
 
 ## Development
 
