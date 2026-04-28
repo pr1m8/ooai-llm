@@ -56,6 +56,13 @@ llm = create_llm(alias="testing", settings=settings, temperature=0)
 print(llm)
 ```
 
+Refresh convenience defaults before creating models when you want aliases such
+as `latest` to follow provider catalogs or LiteLLM metadata:
+
+```bash
+ooai-llm models update --source litellm --providers openai,anthropic,mistral
+```
+
 ## Developer setup
 
 ```bash
